@@ -38,7 +38,7 @@ type Connector struct {
 	Metadata metadata.MD
 
 	config   *ConnectorConfig
-	grpcConn *grpc.ClientConn
+	grpcConn grpc.ClientConnInterface
 
 	OnOpen  func(Service)
 	OnClose func(Service, ServiceEvent)
@@ -103,6 +103,26 @@ func NewConnector(addr string, config ...ConnectorConfig) *Connector {
 	}
 
 	log.Infof("gRPC connected: %s", addr)
+
+	return c
+}
+
+func NewConnectorWithGRPCConn(grpcConn grpc.ClientConnInterface, config ...ConnectorConfig) *Connector {
+	c := &Connector{
+		services: make(map[string]Service),
+		Metadata: make(metadata.MD),
+		ctx:      context.Background(),
+	}
+
+	if len(config) > 0 {
+		c.config = &config[0]
+	}
+
+	if c.config != nil && c.config.Token != "" {
+		c.Metadata.Append("authorization", c.config.Token)
+	}
+
+	c.grpcConn = grpcConn
 
 	return c
 }
